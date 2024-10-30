@@ -5,6 +5,23 @@ from src.image_search import search_ddg_images
 from src.image_utils import download_images
 
 def main():
+    """
+    A script that searches for company logos online and downloads them.
+
+    This program allows the user to specify a text file containing company names, the number of logo images to retrieve for each company, and optionally process the images (e.g., cropping and removing background).
+
+    Command-line arguments:
+    - `-f` or `--file` (str, required): Path to the text file containing company names.
+    - `-n` or `--num-results` (int, required): Number of logo images to search for each company.
+    - `-p` or `--process-image` (flag): Enable image processing (cropping, removing background).
+    - `-v` or `--verbose` (flag): Enable detailed output for debugging purposes.
+
+    The script:
+    1. Reads company names from a provided .txt file.
+    2. Searches DuckDuckGo for company logos.
+    3. Downloads and optionally processes images concurrently using multithreading.
+    """
+    
     # Setting up argument parser (-f, -n, -p)
     parser = argparse.ArgumentParser(description='Company Logo Scraper')
     parser.add_argument('-f', '--file', type=str, required=True, help='Path to the text file containing company names. This argument is required.')

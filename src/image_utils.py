@@ -4,8 +4,21 @@ from PIL import Image
 from io import BytesIO
 
 def download_images(company, url, index, process):
-    """Downloads a single image and optionally processes it."""
+    """
+    Downloads a single image from the given URL and optionally processes it.
+
+    Args:
+        company (str): The name of the company.
+        url (str): The URL from which the image will be downloaded.
+        index (int): The index of the image (used for naming).
+        process (bool): If True, the image will be processed (e.g., tightly cropped).
+
+    The function downloads the image for a given company from the specified URL.
+    If the `process` argument is True, the function will crop the image tightly 
+    around non-empty areas before saving it locally in the `downloaded_logos` folder.
+    """
     try:
+        # Download the image from the given URL
         response = requests.get(url)
         response.raise_for_status()
         img = Image.open(BytesIO(response.content))
@@ -29,18 +42,22 @@ def download_images(company, url, index, process):
 
 def crop_image_tightly(image_path):
     """
-    Crops an image tightly around the non-empty areas.
+    Crops an image tightly around non-empty areas.
 
     Args:
-        image_path (str): Path to the image file to be cropped.
+        image_path (str or BytesIO): Path or BytesIO object of the image to be cropped.
 
     Returns:
-        Image object: A tightly cropped version of the image.
+        Image: A tightly cropped version of the image, or the original image if no cropping is possible.
+
+    This function detects non-empty areas in an image to tightly crop it. It works by 
+    either using the alpha channel (for images with transparency) or by converting the 
+    image to grayscale and finding the non-white bounding box for images without transparency.
     """
     try:
         img = Image.open(image_path)
 
-        # If the image has an alpha channel (transparency)
+        # If the image has an alpha channel, use it to determine non-empty areas
         if img.mode in ('RGBA', 'LA'):
             # Split the image into separate channels
             alpha = img.getchannel('A')
@@ -49,9 +66,9 @@ def crop_image_tightly(image_path):
                 img_cropped = img.crop(bbox)
                 return img_cropped
         else:
-            # Convert the image to grayscale and create a mask to find the non-white regions
+            # Convert to grayscale to find non-white areas
             gray = img.convert('L')
-            # Create a mask by thresholding (keep anything darker than a certain value)
+            # Create a binary mask: anything lighter than a threshold is considered background
             mask = gray.point(lambda x: 0 if x > 245 else 255)
             bbox = mask.getbbox()
             if bbox:
@@ -62,4 +79,5 @@ def crop_image_tightly(image_path):
         print(f"Error in cropping image {image_path}: {e}")
         return None
 
-    return img  # If nothing is cropped, return the original image
+    # If no suitable bounding box found, return the original image
+    return img
