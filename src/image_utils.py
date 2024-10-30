@@ -1,49 +1,31 @@
+import os
 import requests
 from PIL import Image
 from io import BytesIO
-import os
 
-def download_images(company_urls):
-    """
-    Downloads images from a list of URLs for each company and saves them locally.
+def download_images(company, url, index, process):
+    """Downloads a single image and optionally processes it."""
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        img = Image.open(BytesIO(response.content))
 
-    Args:
-        company_urls (list): A list of dictionaries where each dictionary contains a company name and its associated image URLs.
-    """
-    
-    # Create the folder 'downloaded_logos' in the parent directory of src/
-    base_directory = os.path.join(os.path.dirname(__file__), '..')
-    download_directory = os.path.join(base_directory, 'downloaded_logos')
-    os.makedirs(download_directory, exist_ok=True)
+        # Optionally process the image (crop, remove background)
+        if process:
+            img = crop_image_tightly(BytesIO(response.content))
 
-    
-    for company_info in company_urls:
-        for company, urls in company_info.items():
-            print(f"Downloading images for {company}...")
-            # Create sub-folder for each company
-            company_folder = os.path.join(download_directory, company)
-            os.makedirs(company_folder, exist_ok=True)
-            
-            for index, url in enumerate(urls):
-                try:
-                    response = requests.get(url)
-                    response.raise_for_status()
-                    img = Image.open(BytesIO(response.content))
-                    
-                    # Crop the image tightly around the logo
-                    img_cropped = crop_image_tightly(BytesIO(response.content))
-                    
-                    # Save the cropped image with a meaningful namae
-                    image_filename = f'{company_folder}/{company}_logo_{index + 1}.png'
-                    img_cropped.save(image_filename, 'PNG')
-                    print(f"Saved image {image_filename}")
-                
-                except requests.exceptions.RequestException as e:
-                    print(f"Failed to download {url}: {e}")
-                except IOError as e:
-                    print(f"Failed to save image for {url}: {e}")
-                    
+        # Save the image
+        company_folder = os.path.join('downloaded_logos', company)
+        os.makedirs(company_folder, exist_ok=True)
+        image_filename = f'{company}_logo_{index + 1}.png'
+        image_path = os.path.join(company_folder, image_filename)
+        img.save(image_path, 'PNG')
+        print(f"Saved image {image_filename}")
 
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to download {url}: {e}")
+    except IOError as e:
+        print(f"Failed to save image for {url}: {e}")              
 
 def crop_image_tightly(image_path):
     """
