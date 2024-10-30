@@ -21,6 +21,13 @@ def download_images(company, url, index, process):
         # Download the image from the given URL
         response = requests.get(url)
         response.raise_for_status()
+        
+        # Validate the Content-Type to ensure it is an image
+        content_type = response.headers.get('Content-Type')
+        if content_type not in ['image/png', 'image/jpeg', 'image/jpg']:
+            print(f"Skipped URL {url} - Content-Type {content_type} is not a valid image type.")
+            return
+        
         img = Image.open(BytesIO(response.content))
 
         # Optionally process the image (crop, remove background)
